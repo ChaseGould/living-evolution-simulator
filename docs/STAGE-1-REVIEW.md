@@ -1,5 +1,27 @@
 # Stage 1 review
 
+## WebGPU trial: 2026-09-11
+
+Startup now requests a high-performance WebGPU adapter using Babylon's WebGPU
+engine, and falls back to WebGL when WebGPU is absent or initialization rejects.
+A failed WebGPU initialization replaces its canvas before attempting WebGL,
+because one canvas cannot hold both kinds of graphics context. Adapter labels
+use the selected engine's reported information, including the WebGPU vendor.
+Microsoft Basic Render Driver is now recognized as software rendering.
+
+Production build and eight tests passed. The built scene rendered successfully
+in the in-app Chromium browser at 1280 x 720 using WebGPU / AMD / rdna-2, with
+roughly 60 to 69 FPS observed. No warning/error entries were returned during the
+initial WebGPU rendering check. Habitat image export triggered its success
+message. The explicit `?renderer=webgl` path also initialized and reported WebGL
+on AMD. Automated checks cover successful GPU startup, rejected GPU startup,
+missing WebGPU, failure of both backends, and vendor identification.
+
+NVIDIA selection in standalone Edge still requires user verification. This
+change is an experiment, not evidence that the game has selected NVIDIA.
+No browser flags, drivers, security settings, or further Windows preferences
+were changed for this trial. The original stage-1 art limitations still apply.
+
 ## User feedback and GPU follow-up: 2026-09-11
 
 The user likes the dark style, trait adjustments, camera, and smooth preview,

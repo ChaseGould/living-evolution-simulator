@@ -5,13 +5,15 @@ import {
   Color4,
   DefaultRenderingPipeline,
   DirectionalLight,
-  Engine,
   HemisphericLight,
   ImageProcessingConfiguration,
   Scene,
   ShadowGenerator,
   Vector3,
 } from "@babylonjs/core";
+import { CreateScreenshotAsync } from "@babylonjs/core/Misc/screenshotTools";
+import { createRenderer, type Renderer } from "./renderer";
+import { rendererVendor } from "./renderer-policy";
 import { vesper } from "./species/vesper";
 import { createHabitat } from "./visual/habitat";
 import { PreviewDirector } from "./preview";
@@ -60,32 +62,31 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div class="toast" id="toast" role="status"></div>
 `;
 
-const canvas = document.querySelector<HTMLCanvasElement>("#habitat")!;
-let engine: Engine;
+let selectedRenderer: Renderer;
 try {
-  engine = new Engine(canvas, true, {
-    preserveDrawingBuffer: true,
-    stencil: true,
-    powerPreference: "high-performance",
-  });
+  selectedRenderer = await createRenderer(
+    document.querySelector<HTMLCanvasElement>("#habitat")!,
+    new URLSearchParams(location.search).get("renderer") === "webgl",
+  );
 } catch {
   document.querySelector("#loading")!.innerHTML =
-    "This habitat needs WebGL. Enable graphics acceleration and reload in a desktop browser.";
-  throw new Error("WebGL unavailable");
+    'The graphics engine could not start. Enable graphics acceleration or <a href="?renderer=webgl">try compatibility mode</a>.';
+  throw new Error("Neither graphics backend could initialize");
 }
-const renderer = engine.getGlInfo().renderer;
+const { engine, canvas, backend, info: rendererInfo } = selectedRenderer;
+const renderer = [
+  backend,
+  rendererInfo.vendor,
+  rendererInfo.renderer,
+  rendererInfo.version,
+].join(" / ");
 const gpuLabel = document.querySelector<HTMLElement>("#gpu-label")!;
-const gpuVendor = /swiftshader|software|llvmpipe/i.test(renderer)
-  ? "SOFTWARE RENDERING"
-  : /nvidia/i.test(renderer)
-    ? "NVIDIA GPU"
-    : /amd|radeon/i.test(renderer)
-      ? "AMD GPU"
-      : /intel/i.test(renderer)
-        ? "INTEL GPU"
-        : "GPU UNIDENTIFIED";
-gpuLabel.textContent = gpuVendor;
-gpuLabel.title = renderer;
+gpuLabel.textContent = `${backend} · ${rendererVendor(rendererInfo)}`;
+gpuLabel.title =
+  renderer +
+  (selectedRenderer.fallbackReason
+    ? `\n${selectedRenderer.fallbackReason}`
+    : "");
 gpuLabel.setAttribute("aria-label", `Active renderer: ${renderer}`);
 engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
 const scene = new Scene(engine);
@@ -276,12 +277,21 @@ function toast(message: string) {
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => el.classList.remove("visible"), 2500);
 }
-document.querySelector("#capture")!.addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.download = "vesper-habitat.png";
-  a.href = canvas.toDataURL("image/png");
-  a.click();
-  toast("Habitat image saved");
+document.querySelector("#capture")!.addEventListener("click", async () => {
+  try {
+    const a = document.createElement("a");
+    a.download = "vesper-habitat.png";
+    a.href = await CreateScreenshotAsync(engine, camera, {
+      width: engine.getRenderWidth(),
+      height: engine.getRenderHeight(),
+    });
+    a.click();
+    toast("Habitat image saved");
+  } catch {
+    toast(
+      "Could not capture the habitat. Try again after it finishes loading.",
+    );
+  }
 });
 scene.onPointerPick = (_event, pick) => {
   if (pick.pickedMesh && creature.meshes.includes(pick.pickedMesh)) {
@@ -338,7 +348,9 @@ engine.runRenderLoop(() => {
       vertices: scene.getTotalVertices(),
       renderWidth: engine.getRenderWidth(),
       renderHeight: engine.getRenderHeight(),
-      gpu: engine.getGlInfo(),
+      gpu: rendererInfo,
+      backend,
+      fallbackReason: selectedRenderer.fallbackReason,
       time: director.time,
       action: director.action,
       traits,

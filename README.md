@@ -9,6 +9,12 @@ in [docs/original-concept.md](docs/original-concept.md).
 Implemented stack: TypeScript, Babylon.js, and Vite. Browser Web Workers belong to
 the next simulation stage. Use Cloudflare hosting when sharing is needed.
 
+Rendering now tries WebGPU with a high-performance adapter preference first.
+If WebGPU is unavailable or fails initialization, startup falls back to WebGL.
+The label next to FPS shows the actual backend and adapter vendor; the preference
+does not guarantee NVIDIA selection. Hover it for the available adapter details.
+For manual compatibility testing, add `?renderer=webgl` to the preview URL.
+
 ## Run locally
 
 Requires Node.js 24 or newer. From this project, run `npm ci` once, then `npm run dev`.
