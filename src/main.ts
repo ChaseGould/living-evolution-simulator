@@ -56,7 +56,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div id="loading" role="status"><span class="status-dot"></span> Entering the hollow...</div>
   </main>
   <footer class="bottom-bar"><div class="transport"><button id="pause" class="round-button" aria-label="Pause animation">${svg("pause")}</button><div><strong id="playback">Live observation</strong><span>REAL TIME <i></i> 1x</span></div><button id="reset" class="icon-button" title="Reset specimen" aria-label="Reset specimen">${svg("reset")}</button></div><div class="camera-hints"><span>DRAG <b>Orbit</b></span><span>SCROLL <b>Zoom</b></span><span>SPACE <b>Pause</b></span></div><button class="follow-button active" id="follow" aria-pressed="true">${svg("focus")}<span>Following specimen</span></button></footer>
-  <div class="performance"><span class="status-dot"></span><span id="fps">Measuring</span><span>LOCAL RENDERING</span></div>
+  <div class="performance"><span class="status-dot"></span><span id="fps">Measuring</span><span id="gpu-label">DETECTING GPU</span></div>
   <div class="toast" id="toast" role="status"></div>
 `;
 
@@ -73,6 +73,20 @@ try {
     "This habitat needs WebGL. Enable graphics acceleration and reload in a desktop browser.";
   throw new Error("WebGL unavailable");
 }
+const renderer = engine.getGlInfo().renderer;
+const gpuLabel = document.querySelector<HTMLElement>("#gpu-label")!;
+const gpuVendor = /swiftshader|software|llvmpipe/i.test(renderer)
+  ? "SOFTWARE RENDERING"
+  : /nvidia/i.test(renderer)
+    ? "NVIDIA GPU"
+    : /amd|radeon/i.test(renderer)
+      ? "AMD GPU"
+      : /intel/i.test(renderer)
+        ? "INTEL GPU"
+        : "GPU UNIDENTIFIED";
+gpuLabel.textContent = gpuVendor;
+gpuLabel.title = renderer;
+gpuLabel.setAttribute("aria-label", `Active renderer: ${renderer}`);
 engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
 const scene = new Scene(engine);
 scene.clearColor = new Color4(0.047, 0.063, 0.055, 1);

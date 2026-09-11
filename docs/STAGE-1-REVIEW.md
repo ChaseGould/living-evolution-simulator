@@ -1,5 +1,21 @@
 # Stage 1 review
 
+## User feedback and GPU follow-up: 2026-09-11
+
+The user likes the dark style, trait adjustments, camera, and smooth preview,
+but wants higher fidelity and substantially more convincing animation. Eating
+does not yet read as eating. Stay in stage 1 and improve the asset/animation
+before starting the biological simulation.
+
+Windows now has the installed Microsoft Edge executable configured with the
+per-application high-performance GPU preference. Standalone Edge rendering on
+NVIDIA has not yet been verified: the browser connector only exposed the in-app
+browser, and automatic policy review blocked the CLI browser test launch.
+The preview now displays the actual renderer vendor next to FPS. Open it in Edge
+and look for NVIDIA GPU; hover the label for the full renderer string. The in-app
+browser's GPU selection is independent and may still show AMD GPU. This label
+reports observed renderer information, not the configured Windows preference.
+
 Date: 2026-09-10. Status: implemented visual prototype; user acceptance pending.
 
 ## Implemented
