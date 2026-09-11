@@ -8,3 +8,6 @@ coverage/
 .DS_Store
 Thumbs.db
 saves/
+build-output.txt
+test-results/
+playwright-report/

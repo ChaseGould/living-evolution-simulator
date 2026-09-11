@@ -2,7 +2,9 @@
 
 ## Status and agreed direction
 
-Planning only. No application, assets, simulation, or hosting has been implemented.
+Stage 1 has a working local visual prototype, pending the user's visual acceptance.
+No biological simulation or hosting has been implemented. See docs/STAGE-1-REVIEW.md
+for measured performance, checks, and known art limitations.
 Build a desktop-browser-first observation sandbox in which expressive 3D creatures
 are the focus. Use TypeScript and Babylon.js, subject to the first visual and
 performance checkpoint. Develop locally. Prefer Cloudflare when sharing becomes
@@ -76,8 +78,9 @@ Do not assume arbitrary new skeletons can reuse gremlin animations.
 
 Start with good lighting, materials, expressive eyes, and bounded anatomical
 variation. Elaborate fur, drastic limb changes, new appendages, and changing body
-topology are deferred. Asset source and visual reference remain to be chosen;
-this is the principal unresolved input to the visual checkpoint. No asset
+topology are deferred. The first source asset is an original procedural sculpt
+and articulated node hierarchy, with the user's chosen dark, realistic direction.
+It is a reviewable prototype, not a production-quality rigged GLB. No asset
 purchases or placeholder art should be represented as final creature quality.
 
 ## Persistence and history
@@ -94,12 +97,19 @@ retention policies for very long runs, and cloud synchronization come later.
 
 ### 1. Visual and deformation proof
 
-- [ ] Choose an asset source, art reference, and target desktop hardware/browser.
-- [ ] Render one detailed creature in a small lit habitat with orbit/zoom controls.
-- [ ] Add idle, look, walk, rest, and eat behavior with convincing transitions.
-- [ ] Demonstrate size, ear, and color variation on the animated creature.
-- [ ] Inspect combined trait extremes for distortion and foot sliding.
-- [ ] Record frame rate, load size, and visual acceptance on the target machine.
+- [x] Choose an initial asset source, art direction, and target desktop hardware/browser.
+- [x] Render a procedural creature in a small lit habitat with orbit/zoom controls.
+- [x] Add idle, look, walk, rest, and eat preview behavior with blended transitions.
+- [x] Demonstrate size, ear, and color variation on the animated creature.
+- [x] Inspect combined trait extremes and improve foot placement with two-bone IK.
+- [x] Record frame rate and build size on the target machine.
+- [ ] User reviews and accepts creature quality, movement, and the dark visual direction.
+- [ ] If needed after review, replace the procedural prototype with a dedicated sculpt and rig.
+
+Implementation includes original continuous head/torso surfaces, procedural skin
+textures, articulated limbs, gaze/blinks/breathing, a lit woodland habitat, and a
+responsive inspection UI. Behavioral previews are not survival or inheritance.
+See docs/ASSETS.md for provenance. No claim of photorealism or final asset quality.
 
 Exit: the user accepts the creature's appearance and animation quality. Revisit
 asset pipeline or platform if this fails before expanding the game.
@@ -153,6 +163,6 @@ Do not add a server or rewrite the core in another language without measurement.
 
 ## Decisions still open
 
-Creature asset source and art reference; target desktop performance budget;
+User visual acceptance and whether a dedicated production sculpt is needed;
 precise biological tradeoff equations and population cap. Resolve these at their
 checkpoint, without implementing the entire eventual ecosystem first.

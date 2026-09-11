@@ -1,4 +1,4 @@
-﻿# Living Evolution Simulator: agent instructions
+# Living Evolution Simulator: agent instructions
 
 This is an independent game project, unrelated to Elite Security Specialists.
 Read PLAN.md before making changes. It owns agreed scope, decisions, checkpoints,
@@ -31,3 +31,10 @@ the incremental implementation strategy agreed afterward.
 - Keep reporting concise. State what exists, what was verified, and what remains.
 
 AGENTS.md and CLAUDE.md contain the same instructions. Keep them synchronized.
+
+## Local development
+
+Node.js 24 or newer is required. Install with npm ci. Use npm run dev for
+the local preview, npm run build for type checking and static output, and
+npm test for behavior checks. docs/STAGE-1-REVIEW.md records validation and
+art limitations. Stage 1 still requires user visual acceptance before stage 2.
