@@ -4,7 +4,9 @@
 
 Stage 1 has a working local visual prototype, pending the user's visual acceptance.
 No biological simulation or hosting has been implemented. See docs/STAGE-1-REVIEW.md
-for measured performance, checks, and known art limitations.
+for measured performance, checks, known art limitations, and the current review
+request. A new session should read both documents, run the local preview, and
+collect visual feedback before beginning Stage 2.
 Build a desktop-browser-first observation sandbox in which expressive 3D creatures
 are the focus. Use TypeScript and Babylon.js, subject to the first visual and
 performance checkpoint. Develop locally. Prefer Cloudflare when sharing becomes
@@ -113,6 +115,20 @@ See docs/ASSETS.md for provenance. No claim of photorealism or final asset quali
 
 Exit: the user accepts the creature's appearance and animation quality. Revisit
 asset pipeline or platform if this fails before expanding the game.
+
+### Current continuation point
+
+The procedural Vesper prototype has received a readability and motion pass. The
+woodland remains dusk-toned, while increased fill light, reduced fog, softer
+vignetting, and refined skin make the specimen readable. Feeding now has a
+coordinated lift, bite, chew, and lower loop; walking, breathing, idle gaze, and
+resting were also refined. This is presentation behavior, not simulation.
+
+Start a new work session by reading this plan and `docs/STAGE-1-REVIEW.md`, then
+run `npm run dev` from the repository root and open `http://127.0.0.1:5173/` in
+the desktop Edge installation configured for NVIDIA. Review lighting, animation,
+and performance with the user. Do not start Stage 2 until they accept the visual
+prototype or explicitly direct another art/animation pass.
 
 ### 2. Early simulation and acceleration proof
 

@@ -17,10 +17,13 @@ message. The explicit `?renderer=webgl` path also initialized and reported WebGL
 on AMD. Automated checks cover successful GPU startup, rejected GPU startup,
 missing WebGPU, failure of both backends, and vendor identification.
 
-NVIDIA selection in standalone Edge still requires user verification. This
-change is an experiment, not evidence that the game has selected NVIDIA.
-No browser flags, drivers, security settings, or further Windows preferences
-were changed for this trial. The original stage-1 art limitations still apply.
+The user later added the installed Edge executable in Windows Graphics settings
+and explicitly assigned it to the NVIDIA RTX 5060 Laptop GPU. They reported the
+preview then showed NVIDIA and improved from about 50 FPS on AMD to about 165
+FPS. The in-app browser remains independent and may still show AMD GPU. No code
+change can select the discrete GPU on Windows when the browser process itself is
+assigned to the integrated adapter; the Windows per-app Edge preference is the
+effective configuration.
 
 ## User feedback and GPU follow-up: 2026-09-11
 
@@ -119,5 +122,17 @@ Food is a looping presentation prop, not a simulated consumed resource.
 Validation: TypeScript/build and eight existing tests pass. Inspected the browser
 preview for lighting, eating, rest, and combined trait extremes. Browser review
 uses the embedded AMD renderer, not the user's separately configured NVIDIA Edge.
-The user previously reported NVIDIA at 165 FPS before this visual revision; new
-NVIDIA performance and subjective animation acceptance remain to be reviewed.
+The user reported NVIDIA at 165 FPS before this visual revision. New NVIDIA
+performance and subjective animation acceptance remain to be reviewed.
+
+## New-session continuation
+
+Repository: `C:\the_lab\web-projects\living-evolution-simulator`.
+
+Run `npm run dev` from that directory, then open `http://127.0.0.1:5173/` in the
+desktop Edge installation configured for NVIDIA. The preview's top-right label
+should identify NVIDIA. Review the brighter dusk scene and all five behavior
+buttons, with special attention to whether the food reaches the mouth and the
+chewing reads as intentional. Capture the user's judgment before starting Stage
+2. If another pass is requested, continue improving the original procedural
+asset; do not call it a production rig or begin biological simulation.
