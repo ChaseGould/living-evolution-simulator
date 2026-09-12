@@ -370,6 +370,32 @@ input[type="range"]::-moz-range-thumb {
   color: #697b68;
   margin: 17px 0 0;
 }
+.interaction-actions {
+  margin-top: 6px;
+  grid-template-columns: repeat(2, 1fr);
+}
+.interaction-actions button:first-child {
+  grid-column: auto;
+}
+.action-phase {
+  font-size: 9px;
+  color: #a7b496;
+  margin: 10px 0 0;
+}
+.inspector {
+  max-height: calc(82vh - 115px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #687966 #182119;
+}
+@media (max-width: 800px) {
+  .inspector {
+    max-height: none;
+  }
+  #app {
+    min-height: 1260px;
+  }
+}
 .environment-label {
   position: fixed;
   left: 5%;
@@ -582,15 +608,22 @@ input[type="range"]::-moz-range-thumb {
     top: 22px;
   }
   .inspector {
-    top: 100px;
-    padding: 16px 20px;
+    top: 90px;
+    max-height: calc(100vh - 200px);
+    padding: 12px 20px;
+  }
+  .profile-title {
+    margin-top: 10px;
+  }
+  .trait input {
+    margin: 10px 0 8px;
   }
   .trait {
-    margin-bottom: 18px;
+    margin-bottom: 12px;
   }
   .section-label {
-    padding-top: 14px;
-    margin-bottom: 17px;
+    padding-top: 10px;
+    margin-bottom: 10px;
   }
   .state-row {
     margin: 12px 0 15px;

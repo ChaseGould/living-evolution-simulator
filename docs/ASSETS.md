@@ -12,7 +12,8 @@ an original woodland gremlin called Vesper: charcoal/umber mottled skin, elongat
 - `src/visual/geometry.ts`: custom implicit-surface polygonization, shaped ears,
   mottled albedo maps and skin microstructure textures generated locally.
 - `src/visual/habitat.ts`: original terrain arrangement, rocks, ferns, trunks,
-  mushrooms, and fallen branch.
+  mushrooms, fallen branch, collectible food prop, drinking pool, and ripple
+  rings. These new interaction props are original procedural geometry.
 - `src/main.ts`: original inline UI icons. No third-party icon set.
 
 No asset purchases, generative image service, externally downloaded artwork, or

@@ -1,32 +1,68 @@
-import type { Action, CreaturePose } from "./types";
+import type { Action, ActionPhase, CreaturePose } from "./types";
 
-/** Presentation behavior only. Stage 2 will supply authoritative biological state. */
+// Presentation locations in the open clearing, shared with the habitat adapter.
+export const previewSites = {
+  food: { x: -0.85, z: 0.65 },
+  water: { x: 0.8, z: 0.8, y: 0.065 },
+};
+const stepSeconds = 1 / 120;
+const smooth = (v: number) => {
+  const t = Math.min(1, Math.max(0, v));
+  return t * t * (3 - 2 * t);
+};
+
+/** Presentation only. Fixed steps keep action scheduling independent of frames. */
 export class PreviewDirector {
   time = 0;
   actionTime = 0;
+  phaseTime = 0;
+  phase: ActionPhase = "perform";
   action: Action = "observe";
   automatic = true;
   paused = false;
   x = 0;
   z = 0;
   heading = 0;
+  interaction = 0;
+  carrying = false;
+  moving = false;
   private targetX = 0;
   private targetZ = 0;
-  private nextAction = 7;
   private sequence = 0;
+  private remainder = 0;
+  private pending?: { action: Action; automatic: boolean };
+  private exitFrom = 0;
   private readonly sequenceActions: Action[] = [
-    "walk",
+    "forage",
     "observe",
-    "walk",
-    "eat",
+    "drink",
     "rest",
-    "observe",
+    "walk",
   ];
 
   setAction(action: Action, automatic = false) {
     this.automatic = automatic;
+    // Finish lowering/standing before replacing an interaction. Last request wins.
+    if (
+      (this.action === "forage" || this.action === "drink") &&
+      this.phase !== "approach"
+    ) {
+      this.pending = { action, automatic };
+      if (this.phase !== "exit") this.beginExit();
+      return;
+    }
+    this.begin(action, automatic);
+  }
+  private begin(action: Action, automatic: boolean) {
     this.action = action;
-    this.actionTime = 0;
+    this.automatic = automatic;
+    this.actionTime = this.phaseTime = this.interaction = 0;
+    this.carrying = this.moving = false;
+    this.pending = undefined;
+    this.phase =
+      action === "walk" || action === "forage" || action === "drink"
+        ? "approach"
+        : "perform";
     if (action === "walk") {
       this.targetX = this.sequence % 2 ? 1.4 : -0.9;
       this.targetZ = this.sequence % 2 ? 0.35 : -0.55;
@@ -35,67 +71,136 @@ export class PreviewDirector {
         this.targetZ = -this.targetZ;
       }
     }
-    this.nextAction = action === "rest" ? 9 : action === "eat" ? 6 : 7;
+  }
+  private changePhase(phase: ActionPhase) {
+    this.phase = phase;
+    this.phaseTime = 0;
+  }
+  private beginExit() {
+    this.exitFrom = this.interaction;
+    this.changePhase("exit");
   }
   reset() {
     this.time =
-      this.actionTime =
       this.x =
       this.z =
       this.heading =
       this.sequence =
+      this.remainder =
         0;
-    this.automatic = true;
     this.paused = false;
-    this.setAction("observe", true);
+    this.begin("observe", true);
   }
-  tick(delta: number, size: number): CreaturePose {
-    if (this.paused)
-      return {
-        time: this.time,
-        delta: 0,
-        action: this.action,
-        actionTime: this.actionTime,
-        x: this.x,
-        z: this.z,
-        heading: this.heading,
-      };
+  private advance(delta: number, size: number) {
     this.time += delta;
     this.actionTime += delta;
-    if (this.automatic && this.actionTime >= this.nextAction) {
-      this.setAction(
-        this.sequenceActions[this.sequence % this.sequenceActions.length],
+    this.phaseTime += delta;
+    this.moving = false;
+    const scale = 0.8 + Math.min(1, Math.max(0, size)) * 0.4;
+    const interactionAction =
+      this.action === "forage" || this.action === "drink";
+    if (this.phase === "approach") {
+      if (interactionAction) {
+        const site =
+          this.action === "forage" ? previewSites.food : previewSites.water;
+        this.targetX = site.x;
+        this.targetZ = site.z - 0.64 * scale;
+      }
+      const dx = this.targetX - this.x,
+        dz = this.targetZ - this.z;
+      const distance = Math.hypot(dx, dz);
+      const desired =
+        distance > 0.008
+          ? Math.atan2(dx, dz)
+          : interactionAction
+            ? 0
+            : this.heading;
+      const angle = Math.atan2(
+        Math.sin(desired - this.heading),
+        Math.cos(desired - this.heading),
+      );
+      this.heading += Math.max(-delta * 2.5, Math.min(delta * 2.5, angle));
+      if (distance > 0.008 && Math.abs(angle) < 0.15) {
+        const step = Math.min(distance, delta * 0.25 * scale);
+        this.x += (dx / distance) * step;
+        this.z += (dz / distance) * step;
+        this.moving = true;
+      }
+      if (distance <= 0.008 && Math.abs(angle) < 0.015) {
+        this.x = this.targetX;
+        this.z = this.targetZ;
+        if (interactionAction)
+          this.changePhase(this.action === "forage" ? "search" : "enter");
+        else this.begin("observe", this.automatic);
+      } else if (this.phaseTime > 30) {
+        this.begin("observe", this.automatic);
+      }
+    } else if (interactionAction) {
+      if (this.phase === "search") {
+        this.interaction = smooth(this.phaseTime / 0.8) * 0.16;
+        if (this.phaseTime >= 2.4) this.changePhase("enter");
+      } else if (this.phase === "enter") {
+        this.interaction =
+          (this.action === "forage" ? 0.16 : 0) +
+          (this.action === "forage" ? 0.84 : 1) * smooth(this.phaseTime / 1.6);
+        if (this.phaseTime >= 1.6) {
+          this.carrying = this.action === "forage";
+          this.changePhase("perform");
+        }
+      } else if (this.phase === "perform") {
+        this.interaction =
+          this.action === "forage" ? 1 - smooth(this.phaseTime / 1.6) : 1;
+        if (this.phaseTime >= (this.action === "forage" ? 7 : 4.8))
+          this.beginExit();
+      } else if (this.phase === "exit") {
+        this.interaction = this.exitFrom * (1 - smooth(this.phaseTime / 1.4));
+        if (this.phaseTime >= 1.4) {
+          const next = this.pending;
+          this.begin(
+            next?.action ?? "observe",
+            next?.automatic ?? this.automatic,
+          );
+        }
+      }
+    } else if (
+      this.automatic &&
+      this.actionTime >= (this.action === "rest" ? 9 : 5)
+    ) {
+      this.begin(
+        this.sequenceActions[this.sequence++ % this.sequenceActions.length],
         true,
       );
-      this.sequence++;
     }
-    if (this.action === "walk") {
-      const dx = this.targetX - this.x,
-        dz = this.targetZ - this.z,
-        distance = Math.hypot(dx, dz);
-      if (distance > 0.015) {
-        const targetHeading = Math.atan2(dx, dz);
-        const angle = Math.atan2(
-          Math.sin(targetHeading - this.heading),
-          Math.cos(targetHeading - this.heading),
-        );
-        this.heading += angle * Math.min(1, delta * 5);
-        const step = Math.min(distance, delta * 0.25 * (0.8 + size * 0.4));
-        if (Math.abs(angle) < 0.45) {
-          this.x += (dx / distance) * step;
-          this.z += (dz / distance) * step;
-        }
-      } else if (this.automatic) this.nextAction = this.actionTime;
-      else this.setAction("observe");
+  }
+  tick(delta: number, size: number): CreaturePose {
+    let elapsed = 0;
+    if (!this.paused && Number.isFinite(delta) && delta > 0) {
+      this.remainder += delta;
+      while (this.remainder + 1e-10 >= stepSeconds) {
+        this.advance(stepSeconds, size);
+        this.remainder -= stepSeconds;
+        elapsed += stepSeconds;
+      }
     }
     return {
       time: this.time,
-      delta,
+      delta: elapsed,
       action: this.action,
       actionTime: this.actionTime,
       x: this.x,
       z: this.z,
       heading: this.heading,
+      phase: this.phase,
+      phaseTime: this.phaseTime,
+      interaction: this.interaction,
+      moving: this.moving,
+      carrying: this.carrying,
+      target:
+        this.action === "forage"
+          ? { ...previewSites.food, y: 0.12 }
+          : this.action === "drink"
+            ? previewSites.water
+            : undefined,
     };
   }
 }

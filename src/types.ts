@@ -1,6 +1,7 @@
 import type { Scene, TransformNode, AbstractMesh } from "@babylonjs/core";
 
-export type Action = "observe" | "walk" | "rest" | "eat";
+export type Action = "observe" | "walk" | "rest" | "eat" | "forage" | "drink";
+export type ActionPhase = "approach" | "search" | "enter" | "perform" | "exit";
 /** Trait keys belong to a species; the visual contract assumes no particular anatomy. */
 export type Traits = Record<string, number>;
 export interface CreaturePose {
@@ -11,6 +12,12 @@ export interface CreaturePose {
   x: number;
   z: number;
   heading: number;
+  phase: ActionPhase;
+  phaseTime: number;
+  interaction: number;
+  moving: boolean;
+  carrying: boolean;
+  target?: { x: number; y: number; z: number };
 }
 export interface CreatureVisual {
   root: TransformNode;

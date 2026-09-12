@@ -1,5 +1,46 @@
 # Stage 1 review
 
+## Pass 1 implementation: foraging and drinking
+
+Implemented on branch `codex/foraging-drinking` in the sibling
+`living-evolution-simulator-worktrees/foraging-drinking` directory. Run
+`npm run dev -- --port 5174 --strictPort` there and open
+http://127.0.0.1:5174/ in desktop Edge for the updated preview.
+The main checkout's application code has not been merged with this worktree.
+
+Forage approaches the food site, pauses to search, crouches to collect the prop,
+and rises into the existing feeding animation. Drink approaches the pool, lowers
+with supporting hand targets, drinks with small jaw motions and water ripples,
+then rises. Automatic mode includes both interactions and bounded walks.
+The inspector shows each action's phase. Manual interruption exits the current
+interaction before beginning the next request; pause freezes it and reset clears it.
+
+Validation: production build and all 11 tests pass. New tests cover ordered phase
+completion at three body sizes, stationary interactions, carrying/reset state,
+pause and interruption in each phase, and matching automatic results at
+30/60/120 updates per second. Browser checks used the in-app WebGPU AMD adapter at
+1280 x 720. Inspected drinking from front and side, small-body/large-ear pickup,
+and large-body/small-ear drinking with the final supporting hands. The compact
+inspector fits the added controls. Observed readings were approximately 44 to
+57 FPS across these checks, not a controlled performance comparison.
+Current build: 765 files, 7,244,335 bytes raw; Vite still warns about a large bundle.
+
+User acceptance and NVIDIA Edge performance for these actions remain pending.
+Turning still uses procedural pivoting, and contact animation remains a prototype.
+Food is a reusable presentation prop that reappears after the sequence. The pool
+is a simple procedural surface; no resource depletion or biological needs exist.
+The next review is Pass 1 action quality before starting Pass 2.
+
+## Current status: expanded Stage 1
+
+The user confirmed completion of the existing visual and NVIDIA Edge review.
+That acceptance is recorded in PLAN.md. Stage 1 now remains open for the planned
+action expansion: wandering/foraging, drinking, grooming/scratching,
+sleeping/waking, alert/startled responses, and social/courtship previews.
+Follow Stage 1A in PLAN.md for implementation order and acceptance checks.
+Earlier review requests below are historical; the next review concerns the new
+actions as they are implemented. Stage 2 waits for expanded action acceptance.
+
 ## WebGPU trial: 2026-09-11
 
 Startup now requests a high-performance WebGPU adapter using Babylon's WebGPU
@@ -129,7 +170,8 @@ performance and subjective animation acceptance remain to be reviewed.
 
 Repository: `C:\the_lab\web-projects\living-evolution-simulator`.
 
-Run `npm run dev` from that directory, then open `http://127.0.0.1:5173/` in the
+Begin with Stage 1A, Pass 1 in PLAN.md. For visual review, run `npm run dev` from
+that directory, then open `http://127.0.0.1:5173/` in the
 desktop Edge installation configured for NVIDIA. The preview's top-right label
 should identify NVIDIA. Review the brighter dusk scene and all five behavior
 buttons, with special attention to whether the food reaches the mouth and the
