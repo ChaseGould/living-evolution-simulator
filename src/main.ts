@@ -52,6 +52,8 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <div class="trait"><label for="color">Skin coloration <output id="color-value">36%</output></label><input id="color" class="color-range" type="range" min="0" max="100" value="36"><div class="range-labels"><span>SLATE</span><span>UMBER</span></div></div>
       <div class="section-label behavior-label">BEHAVIOR <span>PREVIEW</span></div>
       <div class="behaviors" role="group" aria-label="Preview behavior"><button data-action="auto" class="selected" aria-pressed="true">Autonomous</button><button data-action="observe" aria-pressed="false">Observe</button><button data-action="walk" aria-pressed="false">Walk</button><button data-action="rest" aria-pressed="false">Rest</button><button data-action="eat" aria-pressed="false">Eat</button></div>
+      <div class="behaviors interaction-actions" role="group" aria-label="Habitat interactions"><button data-action="forage" aria-pressed="false">Forage</button><button data-action="drink" aria-pressed="false">Drink</button></div>
+      <p id="action-phase" class="action-phase">Observing the clearing</p>
       <p class="preview-note">Appearance study. Traits are adjustable here;<br>inheritance begins in the next stage.</p>
     </aside>
     <section class="environment-label"><span class="eyebrow">HABITAT 01</span><h3>The shaded hollow</h3><p>Temperate woodland <span>/</span> Dusk</p></section>
@@ -139,7 +141,7 @@ shadows.bias = 0.0005;
 shadows.normalBias = 0.025;
 key.shadowMinZ = 1;
 key.shadowMaxZ = 18;
-createHabitat(scene, shadows);
+const habitat = createHabitat(scene, shadows);
 const creature = vesper.createVisual(scene);
 creature.meshes.forEach((m) => {
   shadows.addShadowCaster(m);
@@ -173,6 +175,8 @@ const actionNames = {
   walk: "Exploring",
   rest: "Resting",
   eat: "Eating",
+  forage: "Foraging",
+  drink: "Drinking",
 };
 function updateTraits() {
   for (const name of ["size", "ears", "color"] as const) {
@@ -306,6 +310,7 @@ engine.runRenderLoop(() => {
   const delta = Math.min(0.05, rawDelta / 1000);
   const pose = director.tick(delta, traits.size);
   creature.update(pose);
+  habitat.update(pose);
   if (following) {
     const target = new Vector3(
       director.x,
@@ -327,6 +332,20 @@ engine.runRenderLoop(() => {
     document.querySelector("#action-status")!.textContent = director.paused
       ? "Paused"
       : actionNames[director.action];
+    const phaseNames = {
+      approach: "Approaching",
+      search: "Sniffing and searching",
+      enter: "Reaching down",
+      perform:
+        director.action === "forage"
+          ? "Collecting and eating"
+          : director.action === "drink"
+            ? "Taking a drink"
+            : "At ease",
+      exit: "Finishing and rising",
+    };
+    document.querySelector("#action-phase")!.textContent =
+      phaseNames[director.phase];
     document.querySelector("#elapsed")!.textContent = `${Math.floor(
       director.time / 60,
     )
@@ -353,6 +372,8 @@ engine.runRenderLoop(() => {
       fallbackReason: selectedRenderer.fallbackReason,
       time: director.time,
       action: director.action,
+      phase: director.phase,
+      phaseTime: director.phaseTime,
       traits,
       x: director.x,
       z: director.z,

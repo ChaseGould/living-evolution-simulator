@@ -1,5 +1,6 @@
 import {
   Color3,
+  Matrix,
   Mesh,
   Quaternion,
   Scene,
@@ -502,9 +503,15 @@ export const vesper: SpeciesDefinition = {
         }
         previousTime = p.time;
         const blend = 1 - Math.exp(-p.delta * 5);
-        activity += ((p.action === "walk" ? 1 : 0) - activity) * blend;
+        activity += ((p.moving ? 1 : 0) - activity) * blend;
         sleep += ((p.action === "rest" ? 1 : 0) - sleep) * blend;
-        eating += ((p.action === "eat" ? 1 : 0) - eating) * blend;
+        const foraging = p.action === "forage";
+        const drinking = p.action === "drink";
+        const bend = p.interaction;
+        const feeding = p.action === "eat" || (foraging && p.carrying);
+        const exitWeight =
+          p.phase === "exit" ? Math.max(0, 1 - p.phaseTime / 1.4) : 1;
+        eating += ((feeding ? (1 - bend) * exitWeight : 0) - eating) * blend;
         const scale = root.scaling.x;
         const distance = Math.hypot(p.x - previousX, p.z - previousZ);
         stride += ((distance / scale) * Math.PI * 2) / 0.64;
@@ -513,7 +520,8 @@ export const vesper: SpeciesDefinition = {
         root.position.set(p.x, 0, p.z);
         root.rotation.y = p.heading;
         const breath = Math.sin(p.time * (1.65 - sleep * 0.55));
-        const cycle = p.actionTime % 4.8;
+        const cycle =
+          (foraging ? Math.max(0, p.phaseTime - 1.6) : p.actionTime) % 4.8;
         const smooth = (v: number) => {
           const t = Math.min(1, Math.max(0, v));
           return t * t * (3 - 2 * t);
@@ -525,28 +533,58 @@ export const vesper: SpeciesDefinition = {
             ? Math.max(0, Math.sin((cycle - 1.35) * 11))
             : 0;
         const bob = Math.cos(stride * 2) * 0.014 * activity;
-        body.position.y = -0.23 * sleep + breath * 0.008 + bob;
+        body.position.y =
+          -0.23 * sleep - bend * 0.5 + breath * 0.008 * (1 - bend) + bob;
         body.rotation.z = Math.sin(stride) * 0.025 * activity;
-        chest.rotation.x = 0.035 * eating + 0.16 * sleep;
-        chest.scaling.y = 1 + breath * 0.007;
-        chest.scaling.z = 1 + breath * (0.021 + sleep * 0.012);
+        chest.rotation.x =
+          0.035 * eating + 0.16 * sleep + bend * (drinking ? 1.3 : 0.55);
+        // Bend around the waist rather than rotating the torso about the floor.
+        chest.position.set(
+          0,
+          0.95 * (1 - Math.cos(chest.rotation.x)),
+          -0.95 * Math.sin(chest.rotation.x),
+        );
+        chest.scaling.y = 1 + breath * 0.007 * (1 - bend);
+        chest.scaling.z = 1 + breath * (0.021 + sleep * 0.012) * (1 - bend);
         const attention = Math.sin(p.time * 0.39) > 0.45 ? 0.24 : -0.12;
         head.rotation.y +=
-          (attention * (1 - sleep) * (1 - eating) - head.rotation.y) *
+          (attention * (1 - sleep) * (1 - eating) * (1 - bend) -
+            head.rotation.y) *
           (1 - Math.exp(-p.delta * 2.8));
         head.rotation.x =
           0.29 * sleep +
           0.025 * eating +
           Math.sin(p.time * 1.1) * 0.012 +
           chew * eating * 0.018;
-        head.rotation.z = Math.sin(p.time * 0.37) * 0.025 * (1 - sleep);
+        head.rotation.x *= 1 - bend;
+        head.rotation.x += foraging ? bend * 0.18 : 0;
+        head.rotation.z =
+          Math.sin(p.time * 0.37) * 0.025 * (1 - sleep) * (1 - bend);
+        const sip =
+          drinking && p.phase === "perform"
+            ? Math.max(0, Math.sin(p.phaseTime * 8))
+            : 0;
         jaw.rotation.x =
           -eating *
           (0.035 +
             chew * 0.24 +
             liftFood * (1 - smooth((cycle - 1.3) / 0.3)) * 0.2);
+        jaw.rotation.x -= sip * 0.08;
         jaw.rotation.y = eating * chew * 0.035;
-        oralCavity.isVisible = eating > 0.05;
+        oralCavity.isVisible = eating > 0.05 || sip > 0;
+        if (drinking && p.target && bend > 0) {
+          // Mouth height at full lean, interpolated into the crouch without dipping
+          // below it midway through entry. The legs compensate for pelvis height.
+          const mouthAtLean =
+            0.95 +
+            (1.61 - 0.166 - 0.95) * Math.cos(1.3) -
+            (0.17 + 0.38) * Math.sin(1.3);
+          body.position.y =
+            bend * ((p.target.y + 0.008 + sip * 0.006) / scale - mouthAtLean) +
+            breath * 0.008 * (1 - bend);
+        }
+        body.computeWorldMatrix(true);
+        chest.computeWorldMatrix(true);
         const blinkPhase = p.time % 4.9;
         const blink =
           blinkPhase < 0.18 ? Math.sin((blinkPhase / 0.18) * Math.PI) : 0;
@@ -578,14 +616,32 @@ export const vesper: SpeciesDefinition = {
             -eating * (i ? 1.3 : 1.55 + bite * 0.2) +
             Math.sin(p.time * 0.8 + i) * 0.025;
           // Solve the hand target in chest space, keeping elbow and wrist connected.
-          if (eating > 0.001) {
+          const reach = foraging || drinking ? bend : 0;
+          if (eating > 0.001 || reach > 0.001) {
             const side = i ? 1 : -1;
             const shoulder = a.position;
-            const hand = Vector3.Lerp(
+            let hand = Vector3.Lerp(
               new Vector3(side * 0.3, 1.04, 0.43),
               new Vector3(i ? 0.19 : -0.035, i ? 1.22 : 1.48, i ? 0.46 : 0.57),
               i ? liftFood * 0.25 : liftFood,
             );
+            if (reach > 0 && p.target) {
+              const pickup = Vector3.TransformCoordinates(
+                drinking
+                  ? new Vector3(
+                      p.x + side * 0.42 * scale,
+                      0.14 * scale,
+                      p.z + 0.28 * scale,
+                    )
+                  : new Vector3(
+                      p.target.x + (i ? 0.2 * scale : 0),
+                      p.target.y + (i ? 0.1 : 0),
+                      p.target.z,
+                    ),
+                Matrix.Invert(chest.getWorldMatrix()),
+              );
+              hand = Vector3.Lerp(hand, pickup, reach);
+            }
             const upperRest = forearms[i].position.clone();
             const handRest = new Vector3(side * 0.035, -0.49, 0.2);
             const direction = hand.subtract(shoulder);
@@ -617,16 +673,18 @@ export const vesper: SpeciesDefinition = {
             a.rotationQuaternion = Quaternion.Slerp(
               Quaternion.FromEulerVector(a.rotation),
               upperQ,
-              eating,
+              Math.max(eating, reach, p.carrying ? exitWeight : 0),
             );
             forearms[i].rotationQuaternion = Quaternion.Slerp(
               Quaternion.FromEulerVector(forearms[i].rotation),
               lowerQ,
-              eating,
+              Math.max(eating, reach, p.carrying ? exitWeight : 0),
             );
           }
           fingers[i].forEach(
-            (finger, j) => (finger.rotation.x = -eating * (0.7 + j * 0.09)),
+            (finger, j) =>
+              (finger.rotation.x =
+                -Math.max(eating, p.carrying ? bend : 0) * (0.7 + j * 0.09)),
           );
           // Linear stance motion cancels root travel; only the swing foot lifts.
           const phase = (((stride / (Math.PI * 2) + i * 0.5) % 1) + 1) % 1;
@@ -636,8 +694,7 @@ export const vesper: SpeciesDefinition = {
               ? 0.16 - 0.64 * phase
               : -0.16 + 0.32 * u * u * (3 - 2 * u);
           const lift = phase < 0.5 ? 0 : Math.sin(u * Math.PI) * 0.09;
-          const ankleY =
-            -0.71 + lift * activity + sleep * 0.23 - breath * 0.008 - bob;
+          const ankleY = -0.71 + lift * activity - body.position.y;
           const ankleZ = 0.085 + offset * activity;
           const d = Math.hypot(ankleY, ankleZ),
             along = (0.4 ** 2 - 0.39 ** 2 + d * d) / (2 * d);
@@ -652,9 +709,11 @@ export const vesper: SpeciesDefinition = {
           );
           legs[i].foot.position.set(0, ankleY, ankleZ);
         });
-        heldFood.isVisible = eating > 0.1;
+        heldFood.isVisible =
+          (p.action === "eat" && eating > 0.1) || (foraging && p.carrying);
         heldFood.scaling.set(0.065, cycle > 1.8 ? 0.043 : 0.07, 0.065);
         tail.rotation.y = Math.sin(p.time * 0.9) * 0.1 * (1 - sleep);
+        tail.position.y = 0.84 - Math.min(0, body.position.y);
       },
       dispose() {
         root.dispose(false, true);

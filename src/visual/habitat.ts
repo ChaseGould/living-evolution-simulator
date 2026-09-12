@@ -15,6 +15,8 @@ import {
   skinTexture,
   tube,
 } from "./geometry";
+import { previewSites } from "../preview";
+import type { CreaturePose } from "../types";
 
 export function createHabitat(scene: Scene, shadows: ShadowGenerator) {
   const rng = random(814);
@@ -239,5 +241,64 @@ export function createHabitat(scene: Scene, shadows: ShadowGenerator) {
       merged.freezeWorldMatrix();
     }
   }
-  return { foodPosition: new Vector3(1.6, 0, 0.45) };
+  const snack = ellipsoid(
+    scene,
+    "forage-food",
+    [previewSites.food.x, 0.12, previewSites.food.z],
+    [0.065, 0.07, 0.065],
+    food,
+  );
+  snack.isPickable = false;
+  shadows.addShadowCaster(snack);
+  const waterMaterial = material(scene, "clearing-water", "#527b78", 0.12);
+  waterMaterial.metallic = 0.3;
+  const basin = ellipsoid(
+    scene,
+    "pool-bed",
+    [previewSites.water.x, 0.015, previewSites.water.z + 0.2],
+    [0.5, 0.035, 0.38],
+    rock,
+  );
+  const water = MeshBuilder.CreateDisc(
+    "drinking-pool",
+    { radius: 1, tessellation: 64, sideOrientation: Mesh.DOUBLESIDE },
+    scene,
+  );
+  water.rotation.x = Math.PI / 2;
+  water.position.set(
+    previewSites.water.x,
+    previewSites.water.y,
+    previewSites.water.z + 0.2,
+  );
+  water.scaling.set(0.46, 0.34, 1);
+  water.material = waterMaterial;
+  const rippleMaterial = material(scene, "water-ripple", "#94b5ad", 0.3);
+  rippleMaterial.alpha = 0.35;
+  const ripples = [0, 1].map((i) => {
+    const ring = MeshBuilder.CreateTorus(
+      `drinking-ripple-${i}`,
+      { diameter: 0.3, thickness: 0.004, tessellation: 32 },
+      scene,
+    );
+    ring.position.set(
+      previewSites.water.x,
+      previewSites.water.y + 0.004,
+      previewSites.water.z,
+    );
+    ring.material = rippleMaterial.clone(`ripple-material-${i}`);
+    ring.isPickable = false;
+    return ring;
+  });
+  water.isPickable = basin.isPickable = false;
+  return {
+    update(pose: CreaturePose) {
+      snack.isVisible = !(pose.action === "forage" && pose.carrying);
+      ripples.forEach((ring, i) => {
+        ring.isVisible = pose.action === "drink" && pose.phase === "perform";
+        const age = (pose.phaseTime * 0.8 + i * 0.5) % 1;
+        ring.scaling.setAll(0.2 + age * 0.7);
+        ring.material!.alpha = (1 - age) * 0.35;
+      });
+    },
+  };
 }
