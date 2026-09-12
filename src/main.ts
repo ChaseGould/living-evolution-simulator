@@ -92,7 +92,7 @@ engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
 const scene = new Scene(engine);
 scene.clearColor = new Color4(0.047, 0.063, 0.055, 1);
 scene.fogMode = Scene.FOGMODE_EXP2;
-scene.fogDensity = 0.11;
+scene.fogDensity = 0.065;
 scene.fogColor = new Color3(0.047, 0.063, 0.055);
 scene.ambientColor = new Color3(0.22, 0.25, 0.21);
 const camera = new ArcRotateCamera(
@@ -113,16 +113,16 @@ camera.minZ = 0.05;
 camera.panningSensibility = 0;
 camera.attachControl(canvas, true);
 const fill = new HemisphericLight("sky-fill", new Vector3(0, 1, 0), scene);
-fill.intensity = 0.65;
+fill.intensity = 1.5;
 fill.diffuse = new Color3(0.69, 0.77, 0.79);
-fill.groundColor = new Color3(0.12, 0.14, 0.095);
+fill.groundColor = new Color3(0.32, 0.35, 0.28);
 const key = new DirectionalLight(
   "canopy-opening",
   new Vector3(-0.4, -1, -0.65),
   scene,
 );
 key.position.set(3, 7, 5);
-key.intensity = 2.8;
+key.intensity = 3.4;
 key.diffuse = new Color3(1, 0.89, 0.71);
 const rim = new DirectionalLight(
   "blue-hour-rim",
@@ -130,11 +130,11 @@ const rim = new DirectionalLight(
   scene,
 );
 rim.position.set(-3, 4, -4);
-rim.intensity = 1.25;
+rim.intensity = 1.65;
 rim.diffuse = new Color3(0.51, 0.67, 0.72);
-const shadows = new ShadowGenerator(1024, key);
+const shadows = new ShadowGenerator(2048, key);
 shadows.usePercentageCloserFiltering = true;
-shadows.filteringQuality = ShadowGenerator.QUALITY_LOW;
+shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
 shadows.bias = 0.0005;
 shadows.normalBias = 0.025;
 key.shadowMinZ = 1;
@@ -156,8 +156,8 @@ pipeline.samples = 1;
 pipeline.imageProcessing.toneMappingEnabled = true;
 pipeline.imageProcessing.toneMappingType =
   ImageProcessingConfiguration.TONEMAPPING_ACES;
-pipeline.imageProcessing.exposure = 1.2;
-pipeline.imageProcessing.contrast = 1.1;
+pipeline.imageProcessing.exposure = 1.5;
+pipeline.imageProcessing.contrast = 1.02;
 const director = new PreviewDirector();
 const traits: Traits = { ...vesper.defaultTraits };
 let following = true,

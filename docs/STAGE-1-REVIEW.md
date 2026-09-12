@@ -101,3 +101,23 @@ the code compiles; if the creature is too stylized, use a dedicated sculpt/rig.
 Final build: 86 files, 7,053,256 bytes raw (6.73 MiB), and 1,671,978 bytes
 (1.59 MiB) when each output file is gzip-compressed for estimation. This includes
 lazy engine chunks, font fallbacks, and third-party license notices.
+
+## Readability and motion revision
+
+User clarified that dark means atmosphere, with the creature still easy to inspect.
+Raised sky and ground fill, reduced fog and contrast, softened the screen vignette,
+and increased shadow resolution. Skin pigment is more readable with subtler bump;
+added ground leaf litter. Kept the dusk woodland palette.
+
+Eating now uses a timed lift/bite/chew/lower sequence, two-segment arm targeting,
+finger curl, an articulated lower lip, oral cavity, and lateral chewing motion.
+Idle gaze settles toward attention targets; breathing expands the chest; walking
+adds weight shifts, and rest lowers the body with feet compensated by leg IK.
+This remains procedural prototype art, not an authored production sculpt/rig.
+Food is a looping presentation prop, not a simulated consumed resource.
+
+Validation: TypeScript/build and eight existing tests pass. Inspected the browser
+preview for lighting, eating, rest, and combined trait extremes. Browser review
+uses the embedded AMD renderer, not the user's separately configured NVIDIA Edge.
+The user previously reported NVIDIA at 165 FPS before this visual revision; new
+NVIDIA performance and subjective animation acceptance remain to be reviewed.

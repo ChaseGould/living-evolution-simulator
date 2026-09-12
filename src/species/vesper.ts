@@ -1,4 +1,11 @@
-import { Color3, Mesh, Scene, TransformNode, Vector3 } from "@babylonjs/core";
+import {
+  Color3,
+  Mesh,
+  Quaternion,
+  Scene,
+  TransformNode,
+  Vector3,
+} from "@babylonjs/core";
 import type { CreaturePose, SpeciesDefinition, Traits } from "../types";
 import {
   albedoTexture,
@@ -25,10 +32,10 @@ export const vesper: SpeciesDefinition = {
     const head = new TransformNode("cranium", scene);
     head.parent = chest;
     head.position.set(0, 1.61, 0.17);
-    const skin = material(scene, "mottled-charcoal-skin", "#67634d", 0.76);
+    const skin = material(scene, "mottled-charcoal-skin", "#67634d", 0.64);
     const bump = skinTexture(scene);
     skin.bumpTexture = bump;
-    bump.level = 0.38;
+    bump.level = 0.24;
     skin.albedoTexture = albedoTexture(scene);
     const membrane = material(scene, "vascular-ear-membrane", "#55443b", 0.85);
     membrane.albedoTexture = skin.albedoTexture;
@@ -37,7 +44,7 @@ export const vesper: SpeciesDefinition = {
     const horn = material(scene, "weathered-keratin", "#706d50", 0.52);
     const amber = material(scene, "iris-amber", "#a48b42", 0.3);
     const black = material(scene, "pupils", "#080b08", 0.15);
-    const eyeWhite = material(scene, "ocular-surface", "#666a41", 0.2);
+    const eyeWhite = material(scene, "ocular-surface", "#454c35", 0.2);
     const glint = material(scene, "eye-catchlight", "#d9e1c0", 0.1);
     glint.emissiveColor = new Color3(0.12, 0.14, 0.09);
     const meshes: Mesh[] = [];
@@ -97,8 +104,7 @@ export const vesper: SpeciesDefinition = {
         "continuous-facial-sculpt",
         [
           { center: [0, 0.2, -0.025], radius: [0.33, 0.35, 0.265] },
-          { center: [0, -0.075, 0.135], radius: [0.235, 0.19, 0.205] },
-          { center: [0, -0.21, 0.23], radius: [0.15, 0.08, 0.1] },
+          { center: [0, -0.045, 0.135], radius: [0.235, 0.12, 0.205] },
           { center: [0, 0.075, 0.285], radius: [0.073, 0.18, 0.09] },
           { center: [0, -0.01, 0.375], radius: [0.095, 0.064, 0.08] },
           { center: [-0.265, -0.015, 0.18], radius: [0.1, 0.14, 0.11] },
@@ -148,7 +154,7 @@ export const vesper: SpeciesDefinition = {
       dark,
       head,
     );
-    line(
+    const lowerLip = line(
       "lower-lip",
       [
         [-0.15, -0.157, 0.32],
@@ -162,6 +168,14 @@ export const vesper: SpeciesDefinition = {
     const jaw = new TransformNode("jaw", scene);
     jaw.parent = head;
     jaw.position.set(0, -0.13, 0.13);
+    lowerLip.setParent(jaw);
+    const oralCavity = orb(
+      "oral-cavity",
+      [0, -0.16, 0.3],
+      [0.145, 0.064, 0.05],
+      dark,
+      head,
+    );
     orb("jawline", [0, -0.08, 0.07], [0.215, 0.09, 0.15], skin, jaw);
     for (const s of [-1, 1])
       line(
@@ -287,6 +301,7 @@ export const vesper: SpeciesDefinition = {
       foot: TransformNode;
     }[] = [];
     let heldFood: Mesh;
+    const fingers: TransformNode[][] = [[], []];
     for (const s of [-1, 1]) {
       const arm = new TransformNode("shoulder", scene);
       arm.parent = chest;
@@ -326,16 +341,20 @@ export const vesper: SpeciesDefinition = {
         heldFood = orb(
           "held-food",
           [s * 0.035, -0.49, 0.2],
-          [0.045, 0.075, 0.04],
+          [0.065, 0.07, 0.065],
           snack,
           fore,
         );
         heldFood.isVisible = false;
       }
       for (let j = 0; j < 4; j++) {
+        const finger = new TransformNode("finger-knuckle", scene);
+        finger.parent = fore;
+        finger.position.set(s * (0.035 + (j - 1.5) * 0.041), -0.48, 0.145);
+        fingers[s < 0 ? 0 : 1].push(finger);
         const x = s * (0.035 + (j - 1.5) * 0.041),
           length = 0.12 + Math.sin((j / 3) * Math.PI) * 0.045;
-        line(
+        const digit = line(
           "finger",
           [
             [x, -0.48, 0.145],
@@ -346,7 +365,8 @@ export const vesper: SpeciesDefinition = {
           skin,
           fore,
         );
-        line(
+        digit.setParent(finger);
+        const nail = line(
           "fingernail",
           [
             [x, -0.48 - length, 0.195],
@@ -356,6 +376,7 @@ export const vesper: SpeciesDefinition = {
           horn,
           fore,
         );
+        nail.setParent(finger);
       }
       line(
         "thumb",
@@ -458,8 +479,8 @@ export const vesper: SpeciesDefinition = {
         ),
       );
       skin.albedoColor = Color3.Lerp(
-        Color3.FromHexString("#343d38"),
-        Color3.FromHexString("#776047"),
+        Color3.FromHexString("#56635b"),
+        Color3.FromHexString("#907958"),
         traits.color,
       );
       membrane.albedoColor = Color3.Lerp(
@@ -491,17 +512,41 @@ export const vesper: SpeciesDefinition = {
         previousZ = p.z;
         root.position.set(p.x, 0, p.z);
         root.rotation.y = p.heading;
-        body.position.y = -0.11 * sleep + Math.sin(p.time * 1.7) * 0.005;
-        chest.rotation.x = 0.12 * eating + 0.11 * sleep;
-        chest.scaling.y = 1 + Math.sin(p.time * 1.7) * 0.009;
-        head.rotation.y =
-          (Math.sin(p.time * 0.43) * 0.15 + Math.sin(p.time * 0.91) * 0.04) *
-          (1 - sleep) *
-          (1 - eating);
+        const breath = Math.sin(p.time * (1.65 - sleep * 0.55));
+        const cycle = p.actionTime % 4.8;
+        const smooth = (v: number) => {
+          const t = Math.min(1, Math.max(0, v));
+          return t * t * (3 - 2 * t);
+        };
+        const liftFood =
+          smooth(cycle / 1.1) * (1 - smooth((cycle - 2.0) / 0.9));
+        const chew =
+          cycle > 1.35 && cycle < 4.25
+            ? Math.max(0, Math.sin((cycle - 1.35) * 11))
+            : 0;
+        const bob = Math.cos(stride * 2) * 0.014 * activity;
+        body.position.y = -0.23 * sleep + breath * 0.008 + bob;
+        body.rotation.z = Math.sin(stride) * 0.025 * activity;
+        chest.rotation.x = 0.035 * eating + 0.16 * sleep;
+        chest.scaling.y = 1 + breath * 0.007;
+        chest.scaling.z = 1 + breath * (0.021 + sleep * 0.012);
+        const attention = Math.sin(p.time * 0.39) > 0.45 ? 0.24 : -0.12;
+        head.rotation.y +=
+          (attention * (1 - sleep) * (1 - eating) - head.rotation.y) *
+          (1 - Math.exp(-p.delta * 2.8));
         head.rotation.x =
-          0.24 * sleep + 0.22 * eating + Math.sin(p.time * 1.1) * 0.015;
+          0.29 * sleep +
+          0.025 * eating +
+          Math.sin(p.time * 1.1) * 0.012 +
+          chew * eating * 0.018;
         head.rotation.z = Math.sin(p.time * 0.37) * 0.025 * (1 - sleep);
-        jaw.rotation.x = eating * (0.09 + Math.sin(p.time * 8) * 0.07);
+        jaw.rotation.x =
+          -eating *
+          (0.035 +
+            chew * 0.24 +
+            liftFood * (1 - smooth((cycle - 1.3) / 0.3)) * 0.2);
+        jaw.rotation.y = eating * chew * 0.035;
+        oralCavity.isVisible = eating > 0.05;
         const blinkPhase = p.time % 4.9;
         const blink =
           blinkPhase < 0.18 ? Math.sin((blinkPhase / 0.18) * Math.PI) : 0;
@@ -521,7 +566,9 @@ export const vesper: SpeciesDefinition = {
         );
         arms.forEach((a, i) => {
           const swing = Math.sin(stride + i * Math.PI);
-          const bite = 0.5 + Math.sin(p.time * 1.6) * 0.5;
+          const bite = liftFood;
+          a.rotationQuaternion = null;
+          forearms[i].rotationQuaternion = null;
           a.rotation.x =
             -swing * 0.17 * activity -
             eating * (i ? 0.5 : 0.9 + bite * 0.2) +
@@ -530,6 +577,57 @@ export const vesper: SpeciesDefinition = {
           forearms[i].rotation.x =
             -eating * (i ? 1.3 : 1.55 + bite * 0.2) +
             Math.sin(p.time * 0.8 + i) * 0.025;
+          // Solve the hand target in chest space, keeping elbow and wrist connected.
+          if (eating > 0.001) {
+            const side = i ? 1 : -1;
+            const shoulder = a.position;
+            const hand = Vector3.Lerp(
+              new Vector3(side * 0.3, 1.04, 0.43),
+              new Vector3(i ? 0.19 : -0.035, i ? 1.22 : 1.48, i ? 0.46 : 0.57),
+              i ? liftFood * 0.25 : liftFood,
+            );
+            const upperRest = forearms[i].position.clone();
+            const handRest = new Vector3(side * 0.035, -0.49, 0.2);
+            const direction = hand.subtract(shoulder);
+            const length = direction.length();
+            direction.normalize();
+            const l1 = upperRest.length(),
+              l2 = handRest.length();
+            const d = Math.min(length, l1 + l2 - 0.001);
+            const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
+            const bend = new Vector3(side * 0.8, -1, 0);
+            bend
+              .subtractInPlace(direction.scale(Vector3.Dot(bend, direction)))
+              .normalize();
+            const elbow = direction
+              .scale(along)
+              .add(bend.scale(Math.sqrt(Math.max(0, l1 * l1 - along * along))));
+            const upperQ = Quaternion.FromUnitVectorsToRef(
+              upperRest.normalizeToNew(),
+              elbow.normalizeToNew(),
+              Quaternion.Identity(),
+            );
+            const localHand = hand.subtract(shoulder).subtract(elbow);
+            localHand.rotateByQuaternionToRef(upperQ.conjugate(), localHand);
+            const lowerQ = Quaternion.FromUnitVectorsToRef(
+              handRest.normalizeToNew(),
+              localHand.normalize(),
+              Quaternion.Identity(),
+            );
+            a.rotationQuaternion = Quaternion.Slerp(
+              Quaternion.FromEulerVector(a.rotation),
+              upperQ,
+              eating,
+            );
+            forearms[i].rotationQuaternion = Quaternion.Slerp(
+              Quaternion.FromEulerVector(forearms[i].rotation),
+              lowerQ,
+              eating,
+            );
+          }
+          fingers[i].forEach(
+            (finger, j) => (finger.rotation.x = -eating * (0.7 + j * 0.09)),
+          );
           // Linear stance motion cancels root travel; only the swing foot lifts.
           const phase = (((stride / (Math.PI * 2) + i * 0.5) % 1) + 1) % 1;
           const u = Math.max(0, (phase - 0.5) * 2);
@@ -539,10 +637,7 @@ export const vesper: SpeciesDefinition = {
               : -0.16 + 0.32 * u * u * (3 - 2 * u);
           const lift = phase < 0.5 ? 0 : Math.sin(u * Math.PI) * 0.09;
           const ankleY =
-            -0.71 +
-            lift * activity +
-            sleep * 0.11 -
-            Math.sin(p.time * 1.7) * 0.005;
+            -0.71 + lift * activity + sleep * 0.23 - breath * 0.008 - bob;
           const ankleZ = 0.085 + offset * activity;
           const d = Math.hypot(ankleY, ankleZ),
             along = (0.4 ** 2 - 0.39 ** 2 + d * d) / (2 * d);
@@ -558,6 +653,7 @@ export const vesper: SpeciesDefinition = {
           legs[i].foot.position.set(0, ankleY, ankleZ);
         });
         heldFood.isVisible = eating > 0.1;
+        heldFood.scaling.set(0.065, cycle > 1.8 ? 0.043 : 0.07, 0.065);
         tail.rotation.y = Math.sin(p.time * 0.9) * 0.1 * (1 - sleep);
       },
       dispose() {

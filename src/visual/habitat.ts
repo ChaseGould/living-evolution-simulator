@@ -134,6 +134,40 @@ export function createHabitat(scene: Scene, shadows: ShadowGenerator) {
       0.7 + rng() * 0.8,
     );
   }
+  // A fine layer of fallen leaves gives the clearing a readable ground scale.
+  const litter = material(scene, "fallen-leaves", "#635641", 0.96);
+  const leafParts: Mesh[] = [];
+  for (let i = 0; i < 130; i++) {
+    const a = rng() * Math.PI * 2,
+      r = 0.5 + rng() * 5;
+    const fallen = MeshBuilder.CreateDisc(
+      "leaf-litter",
+      { radius: 1, tessellation: 7, sideOrientation: Mesh.DOUBLESIDE },
+      scene,
+    );
+    fallen.position.set(
+      Math.cos(a) * r,
+      0.012 + rng() * 0.009,
+      Math.sin(a) * r,
+    );
+    fallen.rotation.set(Math.PI / 2, 0, rng() * Math.PI * 2);
+    const size = 0.025 + rng() * 0.055;
+    fallen.scaling.set(size, size * 0.42, 1);
+    fallen.material = litter;
+    leafParts.push(fallen);
+  }
+  const fallenLeaves = Mesh.MergeMeshes(
+    leafParts,
+    true,
+    true,
+    undefined,
+    false,
+    false,
+  );
+  if (fallenLeaves) {
+    fallenLeaves.receiveShadows = true;
+    staticMeshes.push(fallenLeaves);
+  }
   // Faint forest silhouettes create depth while keeping the specimen readable.
   for (let i = 0; i < 20; i++) {
     const a = (i / 20) * Math.PI * 2,
