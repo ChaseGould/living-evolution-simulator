@@ -38,3 +38,10 @@ Node.js 24 or newer is required. Install with npm ci. Use npm run dev for
 the local preview, npm run build for type checking and static output, and
 npm test for behavior checks. docs/STAGE-1-REVIEW.md records validation and
 art limitations. Stage 1 still requires user visual acceptance before stage 2.
+
+## Browser previews
+
+The agent cannot reliably open or control desktop browsers in this environment.
+Start the local preview when requested, report its URL, and let the user open it
+in their preferred browser for visual review. Do not claim browser visual
+verification unless the user provides it.
