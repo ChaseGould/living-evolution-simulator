@@ -37,7 +37,8 @@ Size affects energy demand and a documented survival/reproduction tradeoff.
 
 Creature actions: breathing, blinking, looking around, walking, resting, and eating.
 Stage 1 expansion: wandering/foraging, drinking, grooming/scratching,
-sleeping/waking, alert/startled responses, and simple social/courtship displays.
+sleeping/waking, and alert/startled responses. Social and courtship behavior
+begins with the multi-creature simulation in Stage 2.
 Controls: orbit, zoom, follow, select, pause, resume, reset, step, and requested speed.
 Inspector: ID, species, age, parents, genome, energy, and generation depth.
 With overlapping generations, display time and population statistics separately
@@ -156,33 +157,21 @@ later simulation work; animation previews do not establish those rules.
   restores the specimen and props; manual changes exit safely; startle releases
   held props consistently and never leaves hands, feet, or pose state stuck.
 - [ ] Review each action and its transitions, including startle during eating,
-  drinking, and sleep, before proceeding to the social pass.
-
-#### Pass 3: Social and courtship preview
-
-- [ ] Add an optional second specimen of the same species for a paired preview,
-  with bounded spacing and separate animation state.
-- [ ] Add a greeting: approach, orient toward each other, exchange curious gaze
-  and a small gesture, pause, and separate without interpenetration.
-- [ ] Add a simple non-explicit courtship display and receptive or disengaging
-  response. Use deliberate posture and gestures distinct from idle or greeting.
-- [ ] Expose paired previews in the controls; reset and interruption restore both
-  specimens. Automatic previews must also work when the partner is hidden.
-- [ ] Review whether both interactions read clearly without relying on labels.
+  drinking, and sleep, before entering the multi-creature Stage 2 work.
 
 #### Final validation and acceptance
 
 - [ ] Check all new actions at combined minimum/maximum size and ear bounds,
-  including differently sized partners. Inspect joints, ground contact, eyes,
-  mouth, hand targets, props, and transitions from close and side views.
+  inspecting joints, ground contact, eyes, mouth, hand targets, props, and
+  transitions from close and side views.
 - [ ] Verify existing actions, camera controls, trait controls, pause/resume, and
   reset still work. Add focused behavioral tests for sequencing, interruption,
-  bounded movement, and independent partner state where applicable.
+  and bounded movement.
 - [ ] Run build and tests; record frame rate in the same NVIDIA Edge viewport for
-  one and two specimens, plus updated build size and any observed regressions.
+  one specimen, plus updated build size and any observed regressions.
 - [ ] Update docs/STAGE-1-REVIEW.md and asset provenance for any added assets.
-- [ ] User accepts the expanded action set and transitions. Only then advance to
-  Stage 2, or record an explicit user-directed scope change.
+- [ ] User accepts the individual action set and transitions. Only then advance
+  to Stage 2, or record an explicit user-directed scope change.
 
 ### Current continuation point
 
@@ -198,20 +187,46 @@ The existing visual review is accepted, but Stage 1 has been expanded at the
 user's request. Stage 1A, Pass 1 is implemented in the sibling worktree
 `living-evolution-simulator-worktrees/foraging-drinking` on branch
 `codex/foraging-drinking`. The user approved Pass 1 on 2026-09-11. Stage 2
-remains gated on acceptance of the expanded action set.
+remains gated on acceptance of Pass 2 and its individual-action validation.
 
 ### 2. Early simulation and acceleration proof
 
 - [ ] Implement seeded inheritance, bounded mutation, resources, births, and deaths.
 - [ ] Define the size/energy tradeoff and a reproducible environment experiment.
+- [ ] Expand the single-creature enclosure into a larger coordinate-based habitat
+  with food, water, shelter, and hazard locations. Divide it into spatial cells
+  or zones so nearby activity can be updated and rendered in more detail than
+  distant activity.
+- [ ] Support a bounded population of same-species creatures. Each individual
+  owns its own needs, perception radius, movement and action state, and a small
+  social memory. The simulation, not the renderer, owns creature and resource
+  positions.
+- [ ] Add the first resource and social interactions: perception, collision
+  avoidance, resource claims, food and water competition, following, resting
+  nearby, and simple avoidance. A claimed resource must not be consumed by two
+  creatures. Mating, parental behavior, predators, and inter-species behavior
+  remain deferred until these interactions are measured and readable.
+- [ ] Build paired social behavior on the actual multi-creature interaction
+  system: an optional second specimen, greeting, and a simple non-explicit
+  courtship display with receptive or disengaging response. Each creature must
+  retain independent action state; spacing, reset, interruption, and automatic
+  previews must work whether the partner is visible or hidden.
+- [ ] Review greeting and courtship from close and side views, including
+  differently sized partners, to confirm they read without relying on labels.
+- [ ] Use a level-of-detail policy: fully animate and render nearby creatures,
+  reduce visual and non-critical update frequency for distant creatures, and
+  retain the same biological rules at every level. Validate that this policy
+  does not change reference simulation outcomes.
 - [ ] Run the same core headlessly and in a browser worker.
 - [ ] Verify same-seed reproducibility, gene bounds, and save/resume continuity.
 - [ ] Verify batch size/render frequency do not change simulation outcomes.
 - [ ] Compare trait distributions across repeated seeds and a control environment.
-- [ ] Benchmark throughput and memory across increasing population sizes.
+- [ ] Benchmark throughput and memory across increasing population sizes,
+  including one- and two-creature NVIDIA Edge viewport measurements.
 
-Exit: measured acceleration and a defensible selection effect. Extinction is a
-valid result; do not conceal it with undocumented automatic population resets.
+Exit: measured acceleration and a defensible selection effect with multiple
+creatures sharing a larger habitat. Extinction is a valid result; do not conceal
+it with undocumented automatic population resets.
 
 ### 3. Integrated playable experiment
 

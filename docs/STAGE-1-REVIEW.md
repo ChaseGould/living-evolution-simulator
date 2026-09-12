@@ -37,11 +37,12 @@ when that work is requested.
 
 The user confirmed completion of the existing visual and NVIDIA Edge review.
 That acceptance is recorded in PLAN.md. Stage 1 now remains open for the planned
-action expansion: wandering/foraging, drinking, grooming/scratching,
-sleeping/waking, alert/startled responses, and social/courtship previews.
+individual action expansion: wandering/foraging, drinking, grooming/scratching,
+sleeping/waking, and alert/startled responses. Social and courtship behavior
+moved to Stage 2, where it will use the real multi-creature interaction system.
 Follow Stage 1A in PLAN.md for implementation order and acceptance checks.
 Earlier review requests below are historical; the next review concerns the new
-actions as they are implemented. Stage 2 waits for expanded action acceptance.
+actions as they are implemented. Stage 2 waits for Pass 2 acceptance.
 
 ## WebGPU trial: 2026-09-11
 
