@@ -122,7 +122,7 @@ asset pipeline or platform if this fails before expanding the game.
 
 ### 1A. Expanded creature actions
 
-The existing visual/GPU review is complete. Add the following in three reviewable
+The existing visual/GPU review is complete. Add the following in two reviewable
 passes, retaining the procedural asset unless its deformation limits prevent a
 convincing action. All actions are presentation previews at this checkpoint.
 Hunger, thirst, fatigue, fear, mate selection, and reproduction rules belong to
@@ -144,6 +144,11 @@ later simulation work; animation previews do not establish those rules.
   and transitions. Keep the NVIDIA performance measurement for final validation.
 
 #### Pass 2: Self-care, sleep, and reactions
+
+Initial implementation is available on branch `codex/self-care`, based on
+documentation commit `943abb4`. Behavior tests and build pass. The action
+checklists below remain open pending visual verification of contact, posture,
+and transitions; see docs/STAGE-1-REVIEW.md.
 
 - [ ] Add grooming/scratching: a short scratch and face/body grooming sequence
   with targeted hand contact, balanced posture, and natural pauses.

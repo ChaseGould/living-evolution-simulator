@@ -1,6 +1,15 @@
 import type { Scene, TransformNode, AbstractMesh } from "@babylonjs/core";
 
-export type Action = "observe" | "walk" | "rest" | "eat" | "forage" | "drink";
+export type Action =
+  | "observe"
+  | "walk"
+  | "rest"
+  | "eat"
+  | "forage"
+  | "drink"
+  | "groom"
+  | "sleep"
+  | "startle";
 export type ActionPhase = "approach" | "search" | "enter" | "perform" | "exit";
 /** Trait keys belong to a species; the visual contract assumes no particular anatomy. */
 export type Traits = Record<string, number>;

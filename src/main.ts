@@ -53,6 +53,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <div class="section-label behavior-label">BEHAVIOR <span>PREVIEW</span></div>
       <div class="behaviors" role="group" aria-label="Preview behavior"><button data-action="auto" class="selected" aria-pressed="true">Autonomous</button><button data-action="observe" aria-pressed="false">Observe</button><button data-action="walk" aria-pressed="false">Walk</button><button data-action="rest" aria-pressed="false">Rest</button><button data-action="eat" aria-pressed="false">Eat</button></div>
       <div class="behaviors interaction-actions" role="group" aria-label="Habitat interactions"><button data-action="forage" aria-pressed="false">Forage</button><button data-action="drink" aria-pressed="false">Drink</button></div>
+      <div class="behaviors interaction-actions" role="group" aria-label="Self care and reactions"><button data-action="groom" aria-pressed="false">Groom</button><button data-action="sleep" aria-pressed="false">Sleep / wake</button><button data-action="startle" aria-pressed="false">Startle</button></div>
       <p id="action-phase" class="action-phase">Observing the clearing</p>
       <p class="preview-note">Appearance study. Traits are adjustable here;<br>inheritance begins in the next stage.</p>
     </aside>
@@ -177,6 +178,9 @@ const actionNames = {
   eat: "Eating",
   forage: "Foraging",
   drink: "Drinking",
+  groom: "Grooming",
+  sleep: "Sleeping",
+  startle: "Alert",
 };
 function updateTraits() {
   for (const name of ["size", "ears", "color"] as const) {
@@ -345,7 +349,25 @@ engine.runRenderLoop(() => {
       exit: "Finishing and rising",
     };
     document.querySelector("#action-phase")!.textContent =
-      phaseNames[director.phase];
+      director.action === "sleep"
+        ? ((
+            {
+              enter: "Settling into sleep",
+              perform: "Sleeping quietly",
+              exit: "Waking, stretching and rising",
+            } as Record<string, string>
+          )[director.phase] ?? "Settling")
+        : director.action === "groom"
+          ? director.phase === "exit"
+            ? "Lowering hands"
+            : "Scratching and grooming"
+          : director.action === "startle"
+            ? director.phase === "enter"
+              ? "Noticing the stimulus"
+              : director.phase === "perform"
+                ? "Stepping back and watching"
+                : "Recovering"
+            : phaseNames[director.phase];
     document.querySelector("#elapsed")!.textContent = `${Math.floor(
       director.time / 60,
     )

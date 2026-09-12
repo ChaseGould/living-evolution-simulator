@@ -504,10 +504,26 @@ export const vesper: SpeciesDefinition = {
         previousTime = p.time;
         const blend = 1 - Math.exp(-p.delta * 5);
         activity += ((p.moving ? 1 : 0) - activity) * blend;
-        sleep += ((p.action === "rest" ? 1 : 0) - sleep) * blend;
+        sleep +=
+          ((p.action === "rest"
+            ? p.phase === "exit"
+              ? Math.max(0, 1 - p.phaseTime / 1.4)
+              : 0.65
+            : p.action === "sleep"
+              ? p.interaction
+              : 0) -
+            sleep) *
+          blend;
+        const asleep = p.action === "sleep" ? p.interaction : 0;
+        const grooming = p.action === "groom" ? p.interaction : 0;
+        const startled = p.action === "startle" ? p.interaction : 0;
+        const stretch =
+          p.action === "sleep" && p.phase === "exit"
+            ? Math.sin(Math.min(1, p.phaseTime / 3) * Math.PI) * 0.22
+            : 0;
         const foraging = p.action === "forage";
         const drinking = p.action === "drink";
-        const bend = p.interaction;
+        const bend = foraging || drinking ? p.interaction : 0;
         const feeding = p.action === "eat" || (foraging && p.carrying);
         const exitWeight =
           p.phase === "exit" ? Math.max(0, 1 - p.phaseTime / 1.4) : 1;
@@ -534,10 +550,19 @@ export const vesper: SpeciesDefinition = {
             : 0;
         const bob = Math.cos(stride * 2) * 0.014 * activity;
         body.position.y =
-          -0.23 * sleep - bend * 0.5 + breath * 0.008 * (1 - bend) + bob;
+          -0.23 * sleep -
+          0.18 * asleep -
+          bend * 0.5 +
+          breath * 0.008 * (1 - bend) +
+          bob -
+          startled * 0.06;
         body.rotation.z = Math.sin(stride) * 0.025 * activity;
         chest.rotation.x =
-          0.035 * eating + 0.16 * sleep + bend * (drinking ? 1.3 : 0.55);
+          0.035 * eating +
+          0.16 * sleep +
+          0.32 * asleep +
+          bend * (drinking ? 1.3 : 0.55) -
+          0.07 * startled;
         // Bend around the waist rather than rotating the torso about the floor.
         chest.position.set(
           0,
@@ -558,6 +583,8 @@ export const vesper: SpeciesDefinition = {
           chew * eating * 0.018;
         head.rotation.x *= 1 - bend;
         head.rotation.x += foraging ? bend * 0.18 : 0;
+        head.rotation.x += 0.22 * asleep - 0.12 * startled;
+        head.rotation.x -= stretch;
         head.rotation.z =
           Math.sin(p.time * 0.37) * 0.025 * (1 - sleep) * (1 - bend);
         const sip =
@@ -589,7 +616,7 @@ export const vesper: SpeciesDefinition = {
         const blink =
           blinkPhase < 0.18 ? Math.sin((blinkPhase / 0.18) * Math.PI) : 0;
         lids.forEach((lid) => {
-          const close = Math.max(blink, sleep * 0.96);
+          const close = Math.max(blink, asleep);
           lid.scaling.y = 0.021 + close * 0.067;
           lid.position.y = 0.081 - close * 0.054;
         });
@@ -600,7 +627,8 @@ export const vesper: SpeciesDefinition = {
         ears.forEach(
           (e, i) =>
             (e.rotation.z =
-              (i ? 1 : -1) * (Math.sin(p.time * 0.7) * 0.025 - sleep * 0.1)),
+              (i ? 1 : -1) *
+              (Math.sin(p.time * 0.7) * 0.025 - sleep * 0.1 + startled * 0.18)),
         );
         arms.forEach((a, i) => {
           const swing = Math.sin(stride + i * Math.PI);
@@ -608,6 +636,7 @@ export const vesper: SpeciesDefinition = {
           a.rotationQuaternion = null;
           forearms[i].rotationQuaternion = null;
           a.rotation.x =
+            -stretch * 2 +
             -swing * 0.17 * activity -
             eating * (i ? 0.5 : 0.9 + bite * 0.2) +
             sleep * 0.13;
@@ -617,7 +646,12 @@ export const vesper: SpeciesDefinition = {
             Math.sin(p.time * 0.8 + i) * 0.025;
           // Solve the hand target in chest space, keeping elbow and wrist connected.
           const reach = foraging || drinking ? bend : 0;
-          if (eating > 0.001 || reach > 0.001) {
+          if (
+            eating > 0.001 ||
+            reach > 0.001 ||
+            grooming > 0.001 ||
+            asleep > 0.001
+          ) {
             const side = i ? 1 : -1;
             const shoulder = a.position;
             let hand = Vector3.Lerp(
@@ -642,6 +676,30 @@ export const vesper: SpeciesDefinition = {
               );
               hand = Vector3.Lerp(hand, pickup, reach);
             }
+            if (grooming > 0) {
+              // Scratch the temple, pause, then brush the chest with the other hand.
+              const stroke = Math.sin(p.phaseTime * 15) * 0.025;
+              const face = p.phaseTime < 3.2;
+              const active = face ? i === 0 : i === 1;
+              const target = face
+                ? new Vector3(-0.31, 1.78 + stroke, 0.29)
+                : new Vector3(
+                    0.16,
+                    1.24 + Math.sin(p.phaseTime * 5) * 0.08,
+                    0.24,
+                  );
+              const pause =
+                p.phase === "perform" && p.phaseTime > 2.6 && p.phaseTime < 3.5
+                  ? 0.25
+                  : 1;
+              if (active) hand = Vector3.Lerp(hand, target, grooming * pause);
+            }
+            if (asleep > 0)
+              hand = Vector3.Lerp(
+                hand,
+                new Vector3(side * 0.22, 0.86, 0.28),
+                asleep,
+              );
             const upperRest = forearms[i].position.clone();
             const handRest = new Vector3(side * 0.035, -0.49, 0.2);
             const direction = hand.subtract(shoulder);
@@ -673,12 +731,24 @@ export const vesper: SpeciesDefinition = {
             a.rotationQuaternion = Quaternion.Slerp(
               Quaternion.FromEulerVector(a.rotation),
               upperQ,
-              Math.max(eating, reach, p.carrying ? exitWeight : 0),
+              Math.max(
+                eating,
+                reach,
+                grooming,
+                asleep,
+                p.carrying ? exitWeight : 0,
+              ),
             );
             forearms[i].rotationQuaternion = Quaternion.Slerp(
               Quaternion.FromEulerVector(forearms[i].rotation),
               lowerQ,
-              Math.max(eating, reach, p.carrying ? exitWeight : 0),
+              Math.max(
+                eating,
+                reach,
+                grooming,
+                asleep,
+                p.carrying ? exitWeight : 0,
+              ),
             );
           }
           fingers[i].forEach(

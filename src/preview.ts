@@ -4,6 +4,7 @@ import type { Action, ActionPhase, CreaturePose } from "./types";
 export const previewSites = {
   food: { x: -0.85, z: 0.65 },
   water: { x: 0.8, z: 0.8, y: 0.065 },
+  stimulus: { x: 1.2, y: 0.3, z: 1.2 },
 };
 const stepSeconds = 1 / 120;
 const smooth = (v: number) => {
@@ -38,13 +39,18 @@ export class PreviewDirector {
     "drink",
     "rest",
     "walk",
+    "groom",
+    "sleep",
+    "startle",
   ];
 
   setAction(action: Action, automatic = false) {
     this.automatic = automatic;
     // Finish lowering/standing before replacing an interaction. Last request wins.
     if (
-      (this.action === "forage" || this.action === "drink") &&
+      ["forage", "drink", "groom", "sleep", "startle", "eat", "rest"].includes(
+        this.action,
+      ) &&
       this.phase !== "approach"
     ) {
       this.pending = { action, automatic };
@@ -62,7 +68,9 @@ export class PreviewDirector {
     this.phase =
       action === "walk" || action === "forage" || action === "drink"
         ? "approach"
-        : "perform";
+        : ["groom", "sleep", "startle"].includes(action)
+          ? "enter"
+          : "perform";
     if (action === "walk") {
       this.targetX = this.sequence % 2 ? 1.4 : -0.9;
       this.targetZ = this.sequence % 2 ? 0.35 : -0.55;
@@ -163,6 +171,54 @@ export class PreviewDirector {
         }
       }
     } else if (
+      ["groom", "sleep", "startle"].includes(this.action) ||
+      this.phase === "exit"
+    ) {
+      const entry =
+        this.action === "sleep" ? 3 : this.action === "startle" ? 0.45 : 1;
+      const duration =
+        this.action === "sleep" ? 10 : this.action === "groom" ? 7 : 2.5;
+      if (this.phase === "enter") {
+        this.interaction = smooth(this.phaseTime / entry);
+        if (this.action === "startle") {
+          const desired = Math.atan2(
+            previewSites.stimulus.x - this.x,
+            previewSites.stimulus.z - this.z,
+          );
+          const angle = Math.atan2(
+            Math.sin(desired - this.heading),
+            Math.cos(desired - this.heading),
+          );
+          this.heading += Math.max(-delta * 4, Math.min(delta * 4, angle));
+        }
+        if (this.phaseTime >= entry) this.changePhase("perform");
+      } else if (this.phase === "perform") {
+        this.interaction = 1;
+        if (this.action === "startle" && this.phaseTime < 0.65) {
+          this.x = Math.max(
+            -1.5,
+            Math.min(1.5, this.x - Math.sin(this.heading) * delta * 0.3),
+          );
+          this.z = Math.max(
+            -1.5,
+            Math.min(1.5, this.z - Math.cos(this.heading) * delta * 0.3),
+          );
+          this.moving = true;
+        }
+        if (this.phaseTime >= duration) this.beginExit();
+      } else if (this.phase === "exit") {
+        const duration = this.action === "sleep" ? 3 : 1.4;
+        this.interaction =
+          this.exitFrom * (1 - smooth(this.phaseTime / duration));
+        if (this.phaseTime >= duration) {
+          const next = this.pending;
+          this.begin(
+            next?.action ?? "observe",
+            next?.automatic ?? this.automatic,
+          );
+        }
+      }
+    } else if (
       this.automatic &&
       this.actionTime >= (this.action === "rest" ? 9 : 5)
     ) {
@@ -200,7 +256,9 @@ export class PreviewDirector {
           ? { ...previewSites.food, y: 0.12 }
           : this.action === "drink"
             ? previewSites.water
-            : undefined,
+            : this.action === "startle"
+              ? previewSites.stimulus
+              : undefined,
     };
   }
 }

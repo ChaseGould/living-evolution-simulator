@@ -290,8 +290,18 @@ export function createHabitat(scene: Scene, shadows: ShadowGenerator) {
     return ring;
   });
   water.isPickable = basin.isPickable = false;
+  const stimulus = ellipsoid(
+    scene,
+    "startle-stimulus",
+    [previewSites.stimulus.x, previewSites.stimulus.y, previewSites.stimulus.z],
+    [0.09, 0.09, 0.09],
+    rippleMaterial,
+  );
+  stimulus.isPickable = false;
   return {
     update(pose: CreaturePose) {
+      stimulus.isVisible = pose.action === "startle";
+      stimulus.scaling.setAll(0.09 + Math.sin(pose.phaseTime * 8) * 0.015);
       snack.isVisible = !(pose.action === "forage" && pose.carrying);
       ripples.forEach((ring, i) => {
         ring.isVisible = pose.action === "drink" && pose.phase === "perform";

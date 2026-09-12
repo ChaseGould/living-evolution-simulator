@@ -1,5 +1,26 @@
 # Stage 1 review
 
+## Pass 2 implementation awaiting visual review
+
+Branch `codex/self-care` in the sibling `self-care` worktree starts from
+documentation commit `943abb4`. Preview: http://127.0.0.1:5175/.
+
+Groom, Sleep / wake, and Startle controls are implemented and included in the
+automatic sequence. Grooming targets the temple and chest. Sleep lowers into a
+curled crouch, closes the eyes, then wakes and stretches. Startle shows a fixed
+stimulus, turns toward it, retreats a bounded distance, watches, and recovers.
+Requests during interactions queue a safe exit before the next action, including
+waking from sleep. Repeated requests use the latest action.
+
+All 13 tests pass, including phase completion, pause, bounds, reset and startle
+interruptions from feeding, drinking, grooming and sleep. Type checking and
+production build pass. Main bundle is 5,051.32 kB (1,140.22 kB gzip); the existing
+large-chunk warning remains. No third-party assets were added.
+
+The browser loaded on WebGPU AMD and exposed the new controls. Browser automation
+could not activate them, so visual contact, pose quality, trait extremes, and
+NVIDIA Edge performance remain unverified. User acceptance remains open.
+
 ## Pass 1 implementation: foraging and drinking
 
 Implemented on branch `codex/foraging-drinking` in the sibling
